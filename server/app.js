@@ -1,15 +1,15 @@
 import express from 'express';
-import { list } from './controllers/placeController.js';
+import placeRoutes from './routes/placeRoutes.js';
 
 const app = express();
 
 app.use(express.json({ limit: '100kb' })); // only JSON bodies
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
+app.use('/api/places', placeRoutes);
 
-// Iteration 1: serve the seeded places (temporary wiring - routes move into
-// server/routes in Iteration 2).
-app.get('/api/places', (req, res, next) => Promise.resolve(list(req, res)).catch(next));
+// Unknown API route -> JSON 404 instead of an HTML page.
+app.use('/api', (req, res) => res.status(404).json({ error: 'Not found.' }));
 
 // Any error thrown in a controller ends up here.
 app.use((err, req, res, next) => {
