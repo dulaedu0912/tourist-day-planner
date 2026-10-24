@@ -6,7 +6,6 @@ import PlaceDetails from '../components/PlaceDetails.jsx';
 import PlanDrawer from '../components/PlanDrawer.jsx';
 import { AlertIcon, CompassIcon, InfoIcon, SearchIcon, XIcon } from '../components/Icons.jsx';
 import { CATEGORIES } from '../lib/constants.js';
-import { PHOTO_CREDITS } from '../lib/images.js';
 import { usePlaces } from '../hooks/usePlaces.js';
 import { useDayPlan } from '../hooks/useDayPlan.js';
 
@@ -216,42 +215,6 @@ export default function HomePage() {
               Admin panel
             </a>
           </div>
-        </div>
-
-        <div className="border-t border-sand-200">
-          <details className="mx-auto max-w-6xl px-4 py-5">
-            <summary className="cursor-pointer text-sm font-medium text-ink-700 underline-offset-4 transition hover:text-brand-800 hover:underline">
-              Photo credits
-            </summary>
-            <p className="mt-3 max-w-2xl text-xs leading-relaxed text-ink-500">
-              Photos are cropped and resized for display. Some images are illustrative and may not show
-              the exact place. All photographs come from Wikimedia Commons and are used under the
-              licences below.
-            </p>
-            <ul className="mt-3 grid gap-x-6 gap-y-2 text-xs leading-relaxed text-ink-500 sm:grid-cols-2">
-              {PHOTO_CREDITS.map((credit) => (
-                <li key={credit.label}>
-                  <a
-                    href={credit.source}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-medium text-ink-700 underline-offset-2 hover:underline"
-                  >
-                    {credit.label}
-                  </a>{' '}
-                  by {credit.author} &middot;{' '}
-                  <a
-                    href={credit.licenseUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline-offset-2 hover:underline"
-                  >
-                    {credit.license}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </details>
         </div>
       </footer>
 

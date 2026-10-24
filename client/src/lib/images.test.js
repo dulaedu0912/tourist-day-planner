@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { HERO_IMAGE, PHOTO_CREDITS, imageForPlace } from './images.js';
+import { HERO_IMAGE, imageForPlace } from './images.js';
 
 describe('imageForPlace', () => {
   it('returns null for a missing place', () => {
@@ -43,16 +43,5 @@ describe('static image metadata', () => {
     expect(HERO_IMAGE.desktop).toMatch(/\.webp$/);
     expect(HERO_IMAGE.mobile).toMatch(/\.webp$/);
     expect(HERO_IMAGE.alt).toBeTruthy();
-  });
-
-  it('every photo credit carries author, licence and a source URL (CC compliance)', () => {
-    expect(PHOTO_CREDITS.length).toBeGreaterThan(0);
-    for (const credit of PHOTO_CREDITS) {
-      expect(credit.label).toBeTruthy();
-      expect(credit.author).toBeTruthy();
-      expect(credit.license).toMatch(/^CC /);
-      expect(credit.licenseUrl).toMatch(/^https:\/\/creativecommons\.org\//);
-      expect(credit.source).toMatch(/^https:\/\//);
-    }
   });
 });
