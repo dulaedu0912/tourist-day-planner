@@ -9,7 +9,10 @@
     "start": "node server/index.js",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:integration": "vitest run -c vitest.integration.config.js",
+    "test:regression": "vitest run -c vitest.regression.config.js",
+    "test:all": "npm run test && npm run test:integration && npm run test:regression"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
@@ -29,6 +32,7 @@
     "concurrently": "^10.0.6",
     "jsdom": "^29.1.1",
     "postcss": "^8.5.31",
+    "supertest": "^7.3.1",
     "tailwindcss": "^3.4.19",
     "vite": "^8.3.5",
     "vitest": "^4.1.12"

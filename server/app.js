@@ -23,9 +23,13 @@ app.get('/admin', (req, res) => res.sendFile(path.join(publicDir, 'index.html'))
 app.use('/api', (req, res) => res.status(404).json({ error: 'Not found.' }));
 
 // Any error thrown in a controller ends up here.
+// Body-parser errors (e.g. an invalid JSON body) already carry a correct HTTP
+// status code - forward it instead of masking every failure as a 500.
+// (Found by the Iteration 11 integration suite: malformed JSON answered 500.)
 app.use((err, req, res, next) => {
   console.error(err);
-  res.status(500).json({ error: 'Something went wrong on the server.' });
+  const status = Number.isInteger(err.status) && err.status >= 400 ? err.status : 500;
+  res.status(status).json({ error: 'Something went wrong on the server.' });
 });
 
 export default app;
