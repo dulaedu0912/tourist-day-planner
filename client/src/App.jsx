@@ -1,6 +1,7 @@
 import HomePage from './pages/HomePage.jsx';
+import AdminPage from './pages/AdminPage.jsx';
 
-// Iteration 3: the tourist page. The /admin route arrives in Iteration 7.
+// Two pages, one bundle: /admin shows the admin panel, everything else the tourist site.
 export default function App() {
-  return <HomePage />;
+  return window.location.pathname.startsWith('/admin') ? <AdminPage /> : <HomePage />;
 }
