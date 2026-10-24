@@ -1,0 +1,195 @@
+# Ganemulla Local Tourist Day-Visit Planner
+
+A small full-stack web app for the ITE2953 group project. Tourists browse attractions within 25 km of Ganemulla, filter by category, view a map, and build a one-day plan. An admin can log in and manage places.
+
+**Stack:** React 19 + Vite · Node.js + Express · MongoDB Atlas · plain JavaScript (no TypeScript) · Tailwind CSS (compiled locally) · Leaflet + OpenStreetMap.
+
+---
+
+## 1. One-time setup
+
+### A. Create the free MongoDB Atlas database
+
+1. Sign up at <https://www.mongodb.com/cloud/atlas/register> and create a **Free (M0)** cluster.
+2. **Database Access** → *Add New Database User* → username + password. Write the password down.
+3. **Network Access** → *Add IP Address* → **Allow access from anywhere** (`0.0.0.0/0`).
+4. **Clusters → Connect → Drivers** → copy the connection string. It looks like:
+
+   ```
+   mongodb+srv://USERNAME:PASSWORD@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority
+   ```
+
+### B. Put the link in `.env`
+
+```env
+MONGODB_URI=mongodb+srv://USERNAME:PASSWORD@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority
+DB_NAME=touristPlanner
+JWT_SECRET=ganemulla-day-trips-secret-2026
+ADMIN_USER=admin
+ADMIN_PASS=admin123
+```
+
+> Replace `USERNAME` / `PASSWORD` with the database user you created.
+> If the password contains `@ : / ? #`, URL-encode it (`@` → `%40`), or use letters and numbers only.
+
+### C. Install and run
+
+```bash
+npm install
+npm run dev
+```
+
+`npm run dev` starts **two things at once**: the Express API on port **3000** and Vite (React) on port **5173**.
+
+Open <http://localhost:5173>. On first start the server inserts the 10 seed places and creates the admin account.
+
+**Admin page:** <http://localhost:5173/admin> — username `admin`, password `admin123`.
+Change `ADMIN_PASS` in `.env` **before** the first run (afterwards the old hash stays in the database; delete the `admins` document in Atlas to re-create it).
+
+### D. Production build (one server, one port)
+
+```bash
+npm run build   # React + Tailwind -> public/
+npm start       # http://localhost:3000  (Express serves the app + API)
+```
+
+---
+
+## 2. Scripts
+
+| Command | What it does |
+|---|---|
+| `npm run dev` | Express (3000) + Vite dev server with hot reload (5173) |
+| `npm run build` | Build React + Tailwind into `public/` |
+| `npm start` | Serve the built app and API on port 3000 |
+
+Tailwind is compiled by Vite through PostCSS, so there is no separate CSS watch/build step.
+
+---
+
+## 3. Project structure
+
+```
+.
+├── server/                   # backend
+│   ├── index.js              # entry point: .env, connect, seed, listen
+│   ├── app.js                # Express app: JSON, static files, routes, error handler
+│   ├── config/db.js          # one MongoDB client + getDb()
+│   ├── routes/
+│   │   ├── placeRoutes.js    # /api/places (+ auth middleware on writes)
+│   │   └── authRoutes.js     # /api/login
+│   ├── controllers/
+│   │   ├── placeController.js # list, getOne, create, update, remove
+│   │   └── authController.js  # bcrypt compare + JWT
+│   ├── models/place.js       # CATEGORIES + buildPlace() validation
+│   ├── middleware/
+│   │   ├── auth.js           # requireAuth + signToken
+│   │   └── asyncHandler.js   # sends async errors to the error handler
+│   ├── utils/distance.js     # Ganemulla origin + Haversine
+│   ├── seed/seedDatabase.js  # seed places + admin (runs once)
+│   └── data/seedPlaces.js    # the 10 starter places
+├── vite.config.js            # React build -> public/, /api proxy to :3000 in dev
+├── tailwind.config.js
+├── postcss.config.js
+├── .env                      # your secrets (never commit this)
+├── client/
+│   ├── index.html            # single page (Leaflet CDN + #root)
+│   └── src/
+│       ├── main.jsx          # mounts <App />
+│       ├── App.jsx           # picks the page from the URL (/admin or home)
+│       ├── pages/
+│       │   ├── HomePage.jsx  # tourist page: search, filter, grid, modal, drawer
+│       │   └── AdminPage.jsx # login state + dashboard + save/delete
+│       ├── components/
+│       │   ├── Header.jsx
+│       │   ├── CategoryFilter.jsx
+│       │   ├── PlaceCard.jsx
+│       │   ├── PlaceDetails.jsx   # modal with map + Add to plan
+│       │   ├── MapView.jsx        # Leaflet map + marker
+│       │   ├── PlanDrawer.jsx     # reorder / remove / clear / summary
+│       │   └── admin/
+│       │       ├── LoginForm.jsx
+│       │       ├── PlaceTable.jsx
+│       │       └── PlaceForm.jsx  # one form for add + edit
+│       ├── hooks/
+│       │   ├── usePlaces.js  # fetch places once, loading + error
+│       │   └── useDayPlan.js # localStorage plan: add/remove/move/clear
+│       ├── services/
+│       │   ├── api.js        # fetch wrapper (JSON + Bearer token)
+│       │   └── auth.js       # get/save/clear admin token
+│       ├── lib/constants.js  # categories, badge colours, kmText
+│       └── index.css         # Tailwind + .btn / .field / .chip classes
+└── public/                   # generated by `npm run build` (git-ignored)
+```
+
+Frontend flow: `App.jsx` → `pages/*` → `components/*` → `hooks/*` → `services/api.js` → Express.
+Backend flow: `index.js` → `app.js` → `routes/*` → `controllers/*` → `models/place.js` → `config/db.js`.
+
+**Two pages, one React bundle:** `main.jsx` checks `window.location.pathname` and renders `<Admin />` for `/admin`, otherwise `<App />`. Express has a `GET /admin` route that returns the same `index.html`.
+
+**Data model** (collection `places`):
+
+```js
+{ _id, name, category, description, lat, lng, distanceKm, openingHours, travelTips, createdAt }
+```
+
+`distanceKm` is calculated on the server with the Haversine formula from Ganemulla town centre (`7.0736, 79.9989`), so it can never be out of date. Collection `admins` stores `{ username, passwordHash }` (bcrypt).
+
+---
+
+## 4. API
+
+| Method | Route | Login needed | Purpose |
+|---|---|---|---|
+| GET | `/api/places` | no | All places (add `?category=Dining` to filter) |
+| GET | `/api/places/:id` | no | One place |
+| GET | `/api/health` | no | Check the server is alive |
+| POST | `/api/login` | no | Returns `{ token }` (valid 2 hours) |
+| POST | `/api/places` | yes | Create a place |
+| PUT | `/api/places/:id` | yes | Update a place |
+| DELETE | `/api/places/:id` | yes | Delete a place |
+
+Admin requests need the header `Authorization: Bearer <token>`; otherwise the API answers `401`.
+
+---
+
+## 5. How the SRS requirements are covered
+
+| Requirement | Where |
+|---|---|
+| FR-001…004 List, card fields, empty state | `pages/HomePage.jsx`, `components/PlaceCard.jsx` |
+| FR-005…009 Category filter, 25 km origin, "Distance unavailable" | `components/CategoryFilter.jsx`; `server/utils/distance.js` |
+| FR-010…015 Details, "Not provided" fallbacks | `components/PlaceDetails.jsx` |
+| FR-016…019 Map, marker, external OSM link, no-coords fallback | `components/MapView.jsx`, `PlaceDetails.jsx` |
+| FR-020…027 Plan add/remove/reorder/no duplicates/localStorage/summary/clear | `hooks/useDayPlan.js`, `components/PlanDrawer.jsx` |
+| FR-028…032 Login, logout, protected routes | `server/middleware/auth.js`, `pages/AdminPage.jsx` |
+| FR-033…040 Admin CRUD, validation, confirm delete, 25 km warning | `placeController.js`, `server/models/place.js` |
+| NFR-004 Disclaimer | amber banner in `App.jsx` |
+| NFR-006 bcrypt password | `bcrypt.hash` when seeding the admin |
+| NFR-008 NoSQL injection / XSS | fields type-checked + whitelisted on the server; React escapes text automatically |
+| BR-003 10 seed places | `server/data/seedPlaces.js` |
+
+---
+
+## 6. Common problems
+
+| Symptom | Fix |
+|---|---|
+| `MONGODB_URI is missing` | Paste your Atlas link into `.env` |
+| `Could not connect to any servers` / timeout | Atlas → Network Access → add `0.0.0.0/0`; check username/password |
+| `bad auth : authentication failed` | Wrong password, or special characters not URL-encoded |
+| Page loads but looks unstyled | Stop and run `npm run build`, then `npm start` (or use `npm run dev`) |
+| Admin says "Please log in again" | Token expired (2 h) or `JWT_SECRET` changed — log in again |
+| Map is blank/grey | No internet access to `tile.openstreetmap.org`, or coordinates missing |
+
+---
+
+## 7. Deploy (optional)
+
+1. Push to GitHub (`.env` and `public/` are ignored).
+2. Create a free **Render** Web Service pointing at the repo.
+3. Build command: `npm install && npm run build` · Start command: `npm start`.
+4. Add the same environment variables (`MONGODB_URI`, `DB_NAME`, `JWT_SECRET`, `ADMIN_USER`, `ADMIN_PASS`) in the dashboard.
+5. Render gives you HTTPS automatically, which satisfies NFR-007.
+
+Map tiles must be used within OpenStreetMap's tile usage policy; the attribution `© OpenStreetMap contributors` is shown on every map.
