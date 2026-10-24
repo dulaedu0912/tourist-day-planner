@@ -1,6 +1,6 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+/* Tailwind v4 reads the legacy JS config (colors, fonts, shadows, animations). */
+@config "../../tailwind.config.js";
 
 @layer base {
   html {
@@ -30,20 +30,26 @@
 }
 
 @layer components {
-  .btn {
+  /* Tailwind v4's @apply only accepts utilities, not custom classes, so the
+     shared button base is grouped by selector instead of `@apply btn`. */
+  .btn,
+  .btn-primary,
+  .btn-ghost,
+  .btn-danger,
+  .btn-dark {
     @apply inline-flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold tracking-tight transition duration-200 disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-primary {
-    @apply btn bg-brand-700 text-white shadow-sm hover:bg-brand-800 hover:shadow;
+    @apply bg-brand-700 text-white shadow-xs hover:bg-brand-800 hover:shadow-sm;
   }
   .btn-ghost {
-    @apply btn border border-sand-300 bg-white text-ink-800 hover:border-brand-400 hover:bg-sand-50;
+    @apply border border-sand-300 bg-white text-ink-800 hover:border-brand-400 hover:bg-sand-50;
   }
   .btn-danger {
-    @apply btn bg-rose-50 text-rose-700 hover:bg-rose-100;
+    @apply bg-rose-50 text-rose-700 hover:bg-rose-100;
   }
   .btn-dark {
-    @apply btn border border-white/25 text-white hover:bg-white/10;
+    @apply border border-white/25 text-white hover:bg-white/10;
   }
   .icon-btn {
     @apply inline-flex h-8 w-8 items-center justify-center rounded-full border border-sand-300 bg-white text-ink-600 transition hover:border-brand-400 hover:text-brand-700;
