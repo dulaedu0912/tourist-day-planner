@@ -1,9 +1,9 @@
 import { useEffect, useRef } from 'react';
+import MapView from './MapView.jsx';
 import { kmText } from '../lib/constants.js';
 
-// FR-010 - FR-015: details modal with "Not provided" fallbacks.
-// Iteration 4 version: no interactive map yet - the placeholder box is replaced
-// by the Leaflet/OpenStreetMap component in Iteration 5.
+// FR-003, FR-010 - FR-018: details modal with "Not provided" fallbacks and the
+// interactive OpenStreetMap view (added in Iteration 5).
 export default function PlaceDetails({ place, onClose }) {
   const hasCoords = Number.isFinite(place.lat) && Number.isFinite(place.lng);
   const closeRef = useRef(null);
@@ -73,17 +73,19 @@ export default function PlaceDetails({ place, onClose }) {
           </div>
 
           {hasCoords ? (
-            <div className="rounded-xl border border-dashed border-sand-300 bg-sand-50 p-6 text-center">
-              {/* FR-016 - FR-019 applied behind this box in Iteration 5 (map) */}
-              <p className="text-sm text-ink-500">The interactive map arrives in Iteration 5.</p>
-              <a
-                href={`https://www.openstreetmap.org/?mlat=${place.lat}&mlon=${place.lng}#map=15/${place.lat}/${place.lng}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-2 inline-block text-sm font-medium text-brand-700 underline"
-              >
-                Open in OpenStreetMap
-              </a>
+            <div>
+              <MapView place={place} />
+              <div className="mt-2 flex items-center justify-between">
+                <p className="text-[11px] text-ink-400">&copy; OpenStreetMap contributors</p>
+                <a
+                  href={`https://www.openstreetmap.org/?mlat=${place.lat}&mlon=${place.lng}#map=15/${place.lat}/${place.lng}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm font-medium text-brand-700 underline"
+                >
+                  Open in OpenStreetMap
+                </a>
+              </div>
             </div>
           ) : (
             <p className="rounded-xl border border-accent-200 bg-accent-50 p-3.5 text-sm text-accent-700">
