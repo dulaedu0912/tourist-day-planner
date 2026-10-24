@@ -97,8 +97,9 @@ The frontend **never talks to the database directly**. It only ever talks to Exp
 | **8. Admin CRUD** | Admin adds, edits, deletes places → tourist page updates | FR-033–040, BR-001, BR-002 |
 | **9. Tests** | Automated test suite proving the app works | NFR-010 |
 | **10. Ship it** | Production build + live deployed URL | NFR-001, 007, UI-01 |
+| **11. Integration & regression** | Real-HTTP API tests + user-journey guards on a test database | NFR-010, FR-032–040 (HTTP level), BR-002/003 |
 
-At the end of Iteration 10, **every functional requirement (FR-001 → FR-040) is satisfied.** There is a full checklist in the final section.
+At the end of Iteration 10, **every functional requirement (FR-001 → FR-040) is satisfied.** There is a full checklist in the final section. Iteration 11 then wraps the finished product in an integration-and-regression safety net — the tests chapter of a real-world project.
 
 ---
 
@@ -736,6 +737,66 @@ One production build. One server. One **URL admitting anyone** — no laptop, no
 
 ---
 
+## ITERATION 11 — The safety net: integration & regression testing
+
+### 🎯 The working product
+
+The finished app is no longer only unit-tested. One command proves — over **real HTTP
+and a real MongoDB database** — that the whole stack works together, and that the six
+critical user journeys cannot quietly break:
+
+| Command | Verifies | Tests |
+|---|---|---:|
+| `npm test` | every logic module in isolation (offline, everything mocked) | 130 |
+| `npm run test:integration` | the real Express app, end-to-end over HTTP | 26 |
+| `npm run test:regression` | the six critical user journeys J1–J6 still hold | 6 |
+| `npm run test:all` | all three layers, in order | **162** |
+
+New files:
+- `test/integration/helpers.js` — connects to a **test database** and wipes it between tests
+- `test/integration/api.integration.test.js` — 26 HTTP integration tests through the real `server/app.js`
+- `test/regression/journeys.regression.test.js` — journeys J1–J6
+- `vitest.integration.config.js`, `vitest.regression.config.js` — one runner per suite, with network-friendly timeouts
+
+Two production files change (both small and safe):
+- `server/config/db.js` — new exported `closeDB()` lets the test runner exit cleanly.
+- `server/app.js` — body-parser errors (e.g. malformed JSON) keep their correct **400** status instead of being masked as **500** — a real bug the new integration suite caught on day one.
+
+### 🧪 How the test database stays safe
+
+The suites never touch your real data:
+
+1. `helpers.js` points `connectDB()` at your `TEST_DB_NAME` (default **`touristPlannerTest`**) **before** anything connects — the same Atlas cluster, a different database.
+2. Every test starts from empty collections (`beforeEach`), like a fresh install each time.
+3. At the end, the suite deletes only its own collections' documents and closes the socket.
+
+**Integration tests** answer the question unit tests can't: *"if a browser really fetched `/api/places`, what would it get back?"* They send real HTTP requests with **supertest** — routing, middleware, validation, MongoDB and the error handlers all running at once. Highlights: the full admin CRUD cycle, 401s for missing/forged tokens, 400s for injection payloads, the >25 km warning, and *malformed JSON → 400*.
+
+**Regression tests** answer a different question: *"if I change the code tomorrow, will everything that already works still work?"* Each journey is one whole user story — J1 seed-restart safety, J2 the tourist's 25 km radius integrity, J3 the complete admin edit-cycle as the tourist sees it, J4 safe failure on a forged token, J5 stable repeated reads, J6 an injection attempt that changes nothing.
+
+### 🤔 Key concepts
+
+- **Integration test** — parts working together: real request → Express → middleware → MongoDB → JSON response.
+- **Regression test** — a guard for already-working features, re-run after every change.
+- **Test DB** — a second database used only by tests; wiping it can never hurt the real one.
+- **supertest** — a tiny library that fires real HTTP requests at your app from inside a test.
+
+### 🎤 What you can demo now
+
+Run `npm run test:all` and let the terminal tell the story: **130 offline unit tests**, then **26 integration tests with names a reviewer can read** ("the full CRUD cycle works end-to-end (FR-033 - FR-035)", "malformed JSON bodies are rejected with 400 (not a 500)"), then the **six regression journeys** — 162/162, all green.
+
+Checklist for this iteration:
+
+- [ ] `npm test` still passes offline (130 tests — the new layer broke nothing)
+- [ ] `npm run test:integration` → 26/26 against Atlas
+- [ ] `npm run test:regression` → 6/6 against Atlas
+- [ ] `npm run test:all` → 162/162
+- [ ] Malformed JSON on `POST /api/places` answers **400** (was 500)
+- [ ] `result.md` updated (§9–§10); `package.json` has the three new scripts
+- [ ] `git commit -m "Iteration 11: integration + regression testing — 162-test safety net"`
+
+---
+
 ## THE FINISH LINE — SRS requirement map
 
 Verify every requirement against the code after the final iteration:
@@ -777,6 +838,7 @@ Verify every requirement against the code after the final iteration:
 | BR-001 | Places within 25 km | 8 | `placeController.js` |
 | BR-002 | Only admins can write | 7–8 | `routes/placeRoutes.js` |
 | BR-003 | ≥ 10 seed places | 1 | `server/data/seedPlaces.js` |
+| Test safety net | 130 unit + 26 integration + 6 regression = **162 tests** | 9, 11 | `test/` suites, `vitest.*.config.js` |
 
 ---
 
@@ -791,6 +853,9 @@ Verify every requirement against the code after the final iteration:
 | `npm test` | Run the whole test suite once |
 | `npm run test:watch` | Re-run tests on every save while writing them |
 | `npm run test:coverage` | Coverage report |
+| `npm run test:integration` | HTTP integration tests — real app vs real test database |
+| `npm run test:regression` | Regression journeys J1–J6 (needs Atlas) |
+| `npm run test:all` | Everything at once: unit (offline) + integration + regression |
 | `node -v` / `npm -v` | Sanity check the Node environment |
 
 ## Appendix B — Glossary (all-in-one)
@@ -804,14 +869,17 @@ Verify every requirement against the code after the final iteration:
 | Component | A reusable UI brick in React |
 | Controller | The function doing the real work behind a route |
 | CRUD | Create, Read, Update, Delete — the four basic database operations |
+| Integration test | Parts working together: a real HTTP request through Express against a real (test) database |
 | JSON | Text format that looks like JavaScript objects; the app's data language |
 | JWT | Signed "hall pass" proving who you are, with an expiry time |
 | Middleware | Code that runs before a request handler; e.g., login bouncer |
 | Model | The code that defines + validates what a valid Place looks like |
 | Props / State | Settings passed into a component / its own memory |
+| Regression test | Re-checking already-working features after any change, so nothing breaks silently |
 | REST | A style of API where URLs + HTTP verbs express everything (`GET /api/places`) |
 | Route | One URL → one controller function |
 | Seed | First-run script that pre-fills the database with starter data |
+| supertest | The library that sends real HTTP requests to the Express app from inside a test |
 | Tailwind | Styling via tiny utility classes instead of custom CSS files |
 | Custom Hook | A `use...` function bundling reusable logic (e.g., `usePlaces`, `useDayPlan`) |
 
@@ -830,4 +898,4 @@ Verify every requirement against the code after the final iteration:
 
 ---
 
-*Guide version 1.0 — matches this repo's file layout. Every iteration's end product is demoable; every requirement above is cross-checkable against one file.*
+*Guide version 1.1 — matches this repo's file layout; adds Iteration 11 (integration + regression testing). Every iteration's end product is demoable; every requirement above is cross-checkable against one file.*
