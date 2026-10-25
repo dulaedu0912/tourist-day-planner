@@ -38,6 +38,7 @@ describe('buildPlace - happy path (FR-033)', () => {
       lat: 7.0936,
       lng: 80.0026,
       distanceKm: distanceKm(7.0936, 80.0026),
+      imageUrl: '',
       openingHours: '8:00 AM - 6:00 PM',
       travelTips: 'Bring water.',
     });
@@ -54,7 +55,17 @@ describe('buildPlace - happy path (FR-033)', () => {
     };
     const { place } = buildPlace(body);
     expect(Object.keys(place).sort()).toEqual(
-      ['category', 'description', 'distanceKm', 'lat', 'lng', 'name', 'openingHours', 'travelTips'].sort()
+      [
+        'category',
+        'description',
+        'distanceKm',
+        'imageUrl',
+        'lat',
+        'lng',
+        'name',
+        'openingHours',
+        'travelTips',
+      ].sort()
     );
     expect(place.distanceKm).toBe(distanceKm(7.0936, 80.0026));
   });
@@ -66,6 +77,24 @@ describe('buildPlace - happy path (FR-033)', () => {
     const { place } = buildPlace(body);
     expect(place.openingHours).toBe('');
     expect(place.travelTips).toBe('');
+  });
+
+  it('accepts an absolute photo URL and a local /images path', () => {
+    expect(buildPlace({ ...validBody(), imageUrl: 'https://cdn.example.com/a.webp' }).place.imageUrl)
+      .toBe('https://cdn.example.com/a.webp');
+    expect(buildPlace({ ...validBody(), imageUrl: '/uploads/photo.webp' }).place.imageUrl)
+      .toBe('/uploads/photo.webp');
+  });
+
+  it('defaults a missing photo URL to an empty string', () => {
+    expect(buildPlace(validBody()).place.imageUrl).toBe('');
+  });
+
+  it('rejects unsafe photo URL schemes (javascript:, data:)', () => {
+    expect(buildPlace({ ...validBody(), imageUrl: 'javascript:alert(1)' }).error).toMatch(/Photo URL/);
+    expect(buildPlace({ ...validBody(), imageUrl: 'data:image/png;base64,AAAA' }).error).toMatch(
+      /Photo URL/
+    );
   });
 
   it('truncates over-long text fields to 2000 characters', () => {

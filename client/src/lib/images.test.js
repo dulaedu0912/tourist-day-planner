@@ -7,34 +7,50 @@ describe('imageForPlace', () => {
     expect(imageForPlace(undefined)).toBeNull();
   });
 
-  it('matches a place by its exact name', () => {
-    const img = imageForPlace({ name: 'Dutch Canal', category: 'Heritage' });
-    expect(img.src).toBe('/images/places/dutch-canal.webp');
-    expect(img.alt).toBeTruthy();
+  it('uses the imageUrl stored on the place', () => {
+    const img = imageForPlace({
+      name: 'Dutch Canal',
+      imageUrl: 'https://cdn.example.com/canal.jpg',
+    });
+    expect(img.src).toBe('https://cdn.example.com/canal.jpg');
+    expect(img.alt).toBe('Photo of Dutch Canal');
   });
 
-  it('normalizes case, padding and repeated whitespace when matching', () => {
-    const img = imageForPlace({ name: '  BEDDAGANA    WETLAND  PARK ', category: 'Eco-Tourism' });
-    expect(img.src).toBe('/images/places/beddagana-wetland-park.webp');
+  it('accepts a local /images path as well as an absolute URL', () => {
+    expect(imageForPlace({ name: 'X', imageUrl: '/uploads/photo.webp' }).src).toBe(
+      '/uploads/photo.webp'
+    );
   });
 
-  it('matches names containing punctuation (apostrophes)', () => {
-    const img = imageForPlace({ name: "Upali's by Nawaloka", category: 'Dining' });
-    expect(img.src).toBe('/images/places/upalis.webp');
+  it('trims surrounding whitespace', () => {
+    expect(imageForPlace({ name: 'X', imageUrl: '  https://cdn.example.com/a.jpg  ' }).src).toBe(
+      'https://cdn.example.com/a.jpg'
+    );
   });
 
-  it('falls back to the category image when the name is unknown', () => {
-    const img = imageForPlace({ name: 'Some Brand New Attraction', category: 'Religious' });
-    expect(img.src).toBe('/images/places/kelaniya-raja-maha-viharaya.webp');
-    expect(img.illustrative).toBe(true);
+  it('returns null when the place has no imageUrl (placeholder band shows)', () => {
+    expect(imageForPlace({ name: 'Brand New Spot', category: 'Dining' })).toBeNull();
+    expect(imageForPlace({ name: 'test', category: 'Nature' })).toBeNull();
   });
 
-  it('returns null when neither the name nor the category is known', () => {
-    expect(imageForPlace({ name: 'Unknown', category: 'Unlisted' })).toBeNull();
+  it('returns null for an empty or whitespace-only imageUrl', () => {
+    expect(imageForPlace({ name: 'X', imageUrl: '' })).toBeNull();
+    expect(imageForPlace({ name: 'X', imageUrl: '   ' })).toBeNull();
   });
 
-  it('returns null when the place has no name and no known category', () => {
-    expect(imageForPlace({ category: 'Nope' })).toBeNull();
+  it('returns null for a non-string imageUrl (no crash on bad data)', () => {
+    expect(imageForPlace({ name: 'X', imageUrl: { $ne: null } })).toBeNull();
+    expect(imageForPlace({ name: 'X', imageUrl: 42 })).toBeNull();
+  });
+
+  it('falls back to an empty alt when the place has no name', () => {
+    expect(imageForPlace({ imageUrl: 'https://cdn.example.com/a.jpg' }).alt).toBe('');
+  });
+
+  it('never borrows another place photo: no name or category lookup remains', () => {
+    // A place named like a seed entry but with no imageUrl stays blank, so a
+    // stale bundle can never resurface the old hardcoded photos.
+    expect(imageForPlace({ name: 'Henarathgoda Botanical Garden', category: 'Nature' })).toBeNull();
   });
 });
 

@@ -1,5 +1,6 @@
 import { BADGE } from '../../lib/constants.js';
 import { CategoryIcon } from '../Icons.jsx';
+import PlaceImage from '../PlaceImage.jsx';
 
 // FR-035 / FR-036: the place list with Edit and Delete actions.
 export default function PlaceTable({ places, onEdit, onDelete }) {
@@ -19,7 +20,15 @@ export default function PlaceTable({ places, onEdit, onDelete }) {
           <tbody className="divide-y divide-sand-100">
             {places.map((place) => (
               <tr key={place._id} className="transition hover:bg-sand-50/70">
-                <td className="px-5 py-3.5 font-medium text-ink-900">{place.name}</td>
+                <td className="px-5 py-3.5">
+                  <div className="flex items-center gap-3">
+                    <PlaceImage
+                      place={place}
+                      className="h-9 w-9 shrink-0 rounded-lg border border-sand-200 object-cover"
+                    />
+                    <span className="font-medium text-ink-900">{place.name}</span>
+                  </div>
+                </td>
                 <td className="px-5 py-3.5">
                   <span
                     className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${

@@ -719,7 +719,7 @@ One production build. One server. One **URL admitting anyone** — no laptop, no
    - NFR-004: the disclaimer is visible
    - NFR-007: address bar shows the padlock
 
-**Optional extras in this repo (nice-to-have polish):** local place photos in `public/images/places/*` with `client/src/components/PlaceImage.jsx` + `lib/images.js` (image with fallback), small `Icons.jsx`, and the `TopoPattern.jsx` background texture.
+**Optional extras in this repo (nice-to-have polish):** per-place photos stored as `imageUrl` on each place (set in the admin form) and rendered by `client/src/components/PlaceImage.jsx` + `lib/images.js` (image with placeholder fallback), small `Icons.jsx`, and the `TopoPattern.jsx` background texture.
 
 ### ✅ Definition of Done — final
 

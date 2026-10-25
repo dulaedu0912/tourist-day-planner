@@ -5,11 +5,16 @@ export const CATEGORIES = ['Nature', 'Religious', 'Dining', 'Heritage', 'Recreat
 
 const text = (value) => (typeof value === 'string' ? value.trim().slice(0, 2000) : '');
 
+// Photo URLs are either absolute (http/https) or a path served by this app (/images/...).
+// Anything else - including javascript: and data: - is rejected.
+const isImageUrl = (value) => /^(https?:\/\/|\/)[^\s]*$/i.test(value);
+
 // FR-037 / NFR-008: type-check and whitelist every field (blocks NoSQL injection).
 export function buildPlace(body = {}) {
   const name = text(body.name);
   const category = text(body.category);
   const description = text(body.description);
+  const imageUrl = text(body.imageUrl);
   const lat = Number(body.lat);
   const lng = Number(body.lng);
 
@@ -22,6 +27,9 @@ export function buildPlace(body = {}) {
   if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
     return { error: 'Enter a valid latitude (-90 to 90) and longitude (-180 to 180).' };
   }
+  if (imageUrl && !isImageUrl(imageUrl)) {
+    return { error: 'Photo URL must start with http://, https:// or /.' };
+  }
 
   const distance = distanceKm(lat, lng);
 
@@ -30,6 +38,7 @@ export function buildPlace(body = {}) {
       name,
       category,
       description,
+      imageUrl,
       lat,
       lng,
       distanceKm: distance,

@@ -6,6 +6,7 @@ const EMPTY = {
   name: '',
   category: 'Nature',
   description: '',
+  imageUrl: '',
   lat: '',
   lng: '',
   openingHours: '',
@@ -15,8 +16,12 @@ const EMPTY = {
 // FR-033 / FR-034 / FR-037 / FR-039: one form for both add and edit.
 export default function PlaceForm({ place, error, onSave, onClose }) {
   const [form, setForm] = useState({ ...EMPTY, ...place });
+  const [previewFailed, setPreviewFailed] = useState(false);
 
-  const change = (event) => setForm({ ...form, [event.target.name]: event.target.value });
+  const change = (event) => {
+    if (event.target.name === 'imageUrl') setPreviewFailed(false);
+    setForm({ ...form, [event.target.name]: event.target.value });
+  };
 
   const submit = (event) => {
     event.preventDefault();
@@ -128,6 +133,37 @@ export default function PlaceForm({ place, error, onSave, onClose }) {
               required
               maxLength={2000}
             />
+          </div>
+
+          <div className="sm:col-span-2">
+            <label htmlFor="p-image" className="mb-1.5 block text-sm font-medium text-ink-700">
+              Photo URL
+            </label>
+            <input
+              id="p-image"
+              name="imageUrl"
+              inputMode="url"
+              className="field"
+              placeholder="https://example.com/photo.jpg"
+              value={form.imageUrl || ''}
+              onChange={change}
+            />
+            <p className="mt-1.5 text-xs text-ink-400">
+              Optional. Without a photo, the card shows a category-coloured placeholder instead.
+            </p>
+            {form.imageUrl && !previewFailed && (
+              <img
+                src={form.imageUrl}
+                alt="Photo preview"
+                onError={() => setPreviewFailed(true)}
+                className="mt-2 h-24 w-40 rounded-xl border border-sand-200 object-cover"
+              />
+            )}
+            {form.imageUrl && previewFailed && (
+              <p className="mt-2 text-xs text-rose-600">
+                That URL could not be loaded as an image. Check the link and try again.
+              </p>
+            )}
           </div>
 
           <div>
