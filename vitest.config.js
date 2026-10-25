@@ -17,7 +17,8 @@ export default defineConfig({
       all: true,
       // Unit-test coverage is measured over application logic. UI components,
       // the Express wiring (app.js/routes) and the entrypoint are integration
-      // concerns and are intentionally out of the unit scope (see result.md).
+      // concerns and are intentionally out of the unit scope; they are covered
+      // by the integration and regression suites.
       include: [
         'server/config/**/*.js',
         'server/controllers/**/*.js',
