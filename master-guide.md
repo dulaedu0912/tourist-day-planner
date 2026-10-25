@@ -349,15 +349,15 @@ The backend is now **feature-complete for reading**:
 1. **Install frontend deps:**
    ```bash
    npm install react react-dom
-   npm install -D vite @vitejs/plugin-react tailwindcss postcss autoprefixer concurrently
+   npm install -D vite @vitejs/plugin-react tailwindcss @tailwindcss/postcss postcss concurrently
    ```
 2. **Create the tooling config:**
    - `vite.config.js` — React plugin, build output to `public/`, and the `/api` proxy to `http://localhost:3000`.
    - `tailwind.config.js` — scan `./client/index.html` and `./client/src/**/*.{js,jsx}`.
-   - `postcss.config.js` — tailwind + autoprefixer.
+   - `postcss.config.js` — just `@tailwindcss/postcss`. Tailwind v4 prefixes CSS itself (Lightning CSS), so autoprefixer is not needed.
 3. **Create the client skeleton:**
    - `client/index.html` — a single HTML page with `<div id="root">` and `<script type="module" src="/src/main.jsx">`.
-   - `client/src/index.css` — the three Tailwind lines (`@tailwind base/components/utilities`) plus small utility classes you reuse (`.btn`, `.field`, `.chip`).
+   - `client/src/index.css` — `@import 'tailwindcss'` plus `@config "../../tailwind.config.js"` (so v4 still reads the legacy JS theme), then small utility classes you reuse (`.btn`, `.field`, `.chip`).
    - `client/src/main.jsx` — mounts `<App />` into `#root`.
    - `client/src/App.jsx` — for now just shows a "Hello" heading.
 4. **Update the dev script** in `package.json`:
